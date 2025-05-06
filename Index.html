@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Student Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Reset and base */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+    }
+    html, body {
+      height: 100%;
+      background: #f4f7fa;
+      color: #333;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      user-select: none;
+      overflow: hidden;
+    }
+    #app {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    @media (max-width: 600px) {
+      #app {
+        display: flex;
+        flex-direction: column;
+      }
+      #sidebar {
+        height: 60px;
+        width: 100%;
+        display: flex;
+        overflow-x: auto;
+        overflow-y: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      #sidebar button {
+        flex: 1;
+        min-width: 80px;
+        font-size: 12px;
+      }
+      #main {
+        height: calc(100vh - 60px);
+        overflow-y: auto;
+      }
+    }
+
+    /* Sidebar */
+    #sidebar {
+      background: #2B2F4A;
+      color: #eee;
+      padding-top: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    #sidebar h1 {
+      font-weight: 700;
+      font-size: 22px;
+      text-align: center;
+      margin-bottom: 30px;
+      user-select:none;
+    }
+    #sidebar button {
+      background: transparent;
+      border: none;
+      color: #bbb;
+      padding: 15px 25px;
+      font-size: 14px;
+      cursor: pointer;
+      border-left: 5px solid transparent;
+      text-align: left;
+      transition: color 0.3s, border-color 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #sidebar button svg {
+      fill: #bbb;
+      width: 18px;
+      height: 18px;
+    }
+    #sidebar button:hover,
+    #sidebar button.active {
+      color: #fff;
+      border-left-color: #6676ff;
+      background: rgba(102, 118, 255, 0.15);
+    }
+
+    /* Main content */
+    #main {
+      padding: 20px 30px;
+      overflow-y: auto;
+      background: #f9fafb;
+    }
+    h2 {
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: #222;
+    }
+    section {
+      max-width: 900px;
+      margin-bottom: 40px;
+    }
+
+    /* Dashboard overview cards */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit,minmax(160px,1fr));
+      gap: 20px;
+    }
+    .card {
+      background: white;
+      padding: 20px 25px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgb(102 118 255 / 0.25);
+      text-align: center;
+      cursor: default;
+      user-select: none;
+      transition: transform 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+    }
+    .card h3 {
+      font-size: 22px;
+      color: #6676ff;
+      margin-bottom: 5px;
+    }
+    .card p {
+      font-size: 14px;
+      color: #555;
+      font-weight: 600;
+    }
+
+    /* Table styles */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgb(102 118 255 / 0.15);
+    }
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+      font-size: 14px;
+    }
+    th {
+      background: #6676ff;
+      color: white;
+      user-select: none;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    tr:hover {
+      background: #f0f5ff;
+    }
+    .checkbox-center {
+      text-align: center;
+    }
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+
+    /* Forms and buttons */
+    form {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgb(102 118 255 / 0.1);
+      max-width: 600px;
+    }
+    label {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 6px;
+      display: inline-block;
+      color: #444;
+      user-select: none;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      transition: border-color 0.3s;
+      font-family: 'Poppins', sans-serif;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: #6676ff;
+      outline: none;
+    }
+    button.btn {
+      background: #6676ff;
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 15px;
+      box-shadow: 0 4px 10px rgba(102,118,255,0.3);
+      transition: background-color 0.3s ease;
+    }
+    button.btn:hover {
+      background: #5466e8;
+    }
+    .btn-secondary {
+      background: #ccc;
+      color: #333;
+      box-shadow: none;
+      margin-left: 12px;
+    }
+    .btn-secondary:hover {
+      background: #b3b3b3;
+    }
+
+    /* Notifications */
+    .notification {
+      background: #6676ff;
+      color: white;
+      padding: 15px 20px;
+      margin: 20px 0;
+      border-radius: 10px;
+      box-shadow: 0 3px 12px rgba(102,118,255,0.3);
+      user-select:none;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+    }
+    .notification.show {
+      display: flex;
+    }
+
+    /* Profile */
+    .profile-photo {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: #6676ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 40px;
+      font-weight: 700;
+      margin-bottom: 15px;
+      user-select:none;
+    }
+    .profile-info p {
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+
+    /* Calendar */
+    #calendar {
+      max-width: 600px;
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 2px 14px rgba(102,118,255,0.15);
+      padding: 12px 15px;
+      user-select:none;
+    }
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .calendar-header button {
+      background: transparent;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: #6676ff;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      transition: background-color 0.2s ease;
+    }
+    .calendar-header button:hover {
+      background: #eef2ff;
+    }
+    #calendar-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      color: #999;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    #calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+    .calendar-day {
+      width: 36px;
+      height: 36px;
+      line-height: 36px;
+      border-radius: 50%;
+      cursor: default;
+      user-select:none;
+    }
+    .calendar-day.today {
+      background: #6676ff;
+      color: white;
+      font-weight: 700;
+    }
+    .calendar-day.other-month {
+      color: #bbb;
+    }
+    .calendar-day.event {
+      border: 2px solid #6676ff;
+      font-weight: 700;
+    }
+    
+    /* Chart container */
+    .chart-container {
+      width: 100%;
+      max-width: 700px;
+      background: white;
+      border-radius: 12px;
+      padding: 12px 20px;
+      box-shadow: 0 2px 12px rgba(102,118,255,0.15);
+      margin-bottom: 40px;
+    }
+
+    /* Toggle switch for dark mode */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 25px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 19px;
+      width: 19px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #6676ff;
+    }
+    input:checked + .slider:before {
+      transform: translateX(24px);
+    }
+
+    /* Dark mode */
+    body.dark {
+      background: #121212;
+      color: #e4e4e4;
+    }
+    body.dark #app {
+      background: #1e1e1e;
+      box-shadow: none;
+    }
+    body.dark #sidebar {
+      background: #15172b;
+      color: #eee;
+    }
+    body.dark #sidebar button {
+      color: #aaa;
+    }
+    body.dark #sidebar button:hover,
+    body.dark #sidebar button.active {
+      color: #aabfff;
+      background: rgba(102, 118, 255, 0.25);
+      border-left-color: #aabfff;
+    }
+    body.dark #main {
+      background: #1b1b1b;
+    }
+    body.dark .card {
+      background: #222;
+      box-shadow: 0 2px 8px rgba(102,118,255,0.75);
+    }
+    body.dark table {
+      background: #222;
+      color: #ddd;
+    }
+    body.dark th {
+      background: #3344ff;
+      color: #fff;
+    }
+    body.dark tr:hover {
+      background: #2a2a4a;
+    }
+    body.dark form, 
+    body.dark .chart-container,
+    body.dark #calendar {
+      background: #222;
+      box-shadow: 0 2px 14px rgba(102,118,255,0.6);
+    }
+    body.dark input, body.dark select, body.dark textarea {
+      background: #333;
+      border: 1px solid #555;
+      color: #eee;
+    }
+    body.dark input:focus, 
+    body.dark select:focus, 
+    body.dark textarea:focus {
+      border-color: #aabfff;
+      outline: none;
+    }
+    body.dark button.btn {
+      background: #aabfff;
+      color: #223366;
+      box-shadow: 0 4px 10px rgba(170,187,255,0.6);
+    }
+    body.dark button.btn:hover {
+      background: #8899ff;
+    }
+    body.dark button.btn-secondary {
+      background: #444;
+      color: #ddd;
+    }
+    body.dark button.btn-secondary:hover {
+      background: #555;
+    }
+    body.dark .notification {
+      background: #8899ff;
+      color: #223366;
+    }
+    body.dark .calendar-header button {
+      color: #aabfff;
+    }
+    body.dark .calendar-day.today {
+      background: #8899ff;
+      color: #121212;
+    }
+    body.dark .calendar-day.event {
+      border-color: #aabfff;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" role="main" aria-label="Student Dashboard Application">
+    <nav id="sidebar" aria-label="Primary navigation">
+      <h1>Student</h1>
+      <button class="active" data-panel="dashboard" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8v-10h-8v10zm0-18v6h8V3h-8z"/></svg>Dashboard</button>
+      <button data-panel="courses"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 6H3v12h18V6zm-2 10H5v-8h14v8z"/></svg>Courses</button>
+      <button data-panel="attendance"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19a2 2 0 002 2h14a2 2 0 002-2V5c0-1.1-.9-2-2-2zM7 17h2v-2H7v2zm0-4h2v-2H7v2zm4 4h2v-2h-2v2zm4 0h2v-2h-2v2zm0-4h2v-2h-2v2z"/></svg>Attendance</button>
+      <button data-panel="grades"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>Grades</button>
+      <button data-panel="assignments"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zm-7 14H8v-2h4v2zm3-4H8v-2h7v2zm0-4H8V7h7v2z"/></svg>Assignments</button>
+      <button data-panel="calendar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zM5 20V9h14v11H5z"/></svg>Calendar</button>
+      <button data-panel="notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a2 2 0 002-2H10a2 2 0 002 2zm6-6v-5c0-3-1.64-5.64-4.5-6.32V4a1.5 1.5 0 00-3 0v.68C7.64 5.36 6 8 6 11v5l-1.7 1.7a.996.996 0 101.42 1.42L7 18h10l1.28 1.28a.996.996 0 101.42-1.42L18 16z"/></svg>Notifications</button>
+      <button data-panel="profile"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>Profile</button>
+      <button data-panel="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94a1.994 1.994 0 000-1.88l2.03-1.16a.5.5 0 00.17-.63l-1.92-3.32a.5.5 0 00-.6-.22l-2.37.96a7.053 7.053 0 00-1.62-.95l-.36-2.53a.5.5 0 00-.5-.42h-3.84a.5.5 0 00-.5.42l-.36 2.53a6.961 6.961 0 00-1.62.95l-2.37-.96a.5.5 0 00-.6.22L2.66 9.27a.5.5 0 00.17.63l2.03 1.16a1.934 1.934 0 000 1.88l-2.03 1.16a.5.5 0 00-.17.63l1.92 3.32a.5.5 0 00.6.22l2.37-.96c.5.37 1.03.67 1.62.95l.36 2.53a.5.5 0 00.5.42h3.84a.5.5 0 00.5-.42l.36-2.53a6.881 6.881 0 001.62-.95l2.37.96a.5.5 0 00.6-.22l1.92-3.32a.5.5 0 00-.17-.63l-2.03-1.16zM12 15.5a3.5 3.5 0 110-7 3.5 3.5 0 010 7z"/></svg>Settings</button>
+    </nav>
+    <main id="main" tabindex="0" aria-live="polite">
+      <!-- Panels -->
+      <section id="dashboard" class="panel" aria-label="Dashboard Overview">
+        <h2>Dashboard</h2>
+        <div class="cards" aria-live="polite" aria-atomic="true">
+          <div class="card" id="totalCoursesCard" tabindex="0" aria-label="Total courses enrolled">0 <p>Courses</p></div>
+          <div class="card" id="creditsEarnedCard" tabindex="0" aria-label="Total credits earned">0 <p>Credits</p></div>
+          <div class="card" id="attendancePercentCard" tabindex="0" aria-label="Overall attendance percentage">0% <p>Attendance</p></div>
+          <div class="card" id="gpaCard" tabindex="0" aria-label="Current GPA">0.00 <p>GPA</p></div>
+          <div class="card" id="assignmentsPendingCard" tabindex="0" aria-label="Pending assignments">0 <p>Pending Assignments</p></div>
+        </div>
+
+        <div class="chart-container" aria-label="Attendance trends chart">
+          <canvas id="attendanceChart" aria-role="img" aria-label="Attendance Trends"></canvas>
+        </div>
+        <div class="chart-container" aria-label="Grade distribution chart">
+          <canvas id="gradeChart" aria-role="img" aria-label="Grade Distribution"></canvas>
+        </div>
+      </section>
+
+      <section id="courses" class="panel" style="display:none" aria-label="Courses Management">
+        <h2>Courses</h2>
+        <form id="addCourseForm" aria-label="Add new course form">
+          <label for="courseCode">Code</label>
+          <input type="text" id="courseCode" name="courseCode" placeholder="e.g. CS101" required aria-required="true" />
+          <label for="courseName">Name</label>
+          <input type="text" id="courseName" name="courseName" placeholder="Course Name" required aria-required="true" />
+          <label for="courseCredits">Credits</label>
+          <input type="number" id="courseCredits" name="courseCredits" min="1" max="10" placeholder="3" required aria-required="true" />
+          <button type="submit" class="btn" aria-label="Add course">Add Course</button>
+        </form>
+        <table aria-label="List of courses" id="coursesTable" tabindex="0">
+          <thead>
+            <tr><th>Code</th><th>Name</th><th>Credits</th><th>Action</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section id="attendance" class="panel" style="display:none" aria-label="Attendance Tracking">
+        <h2>Attendance</h2>
+        <table aria-label="Attendance records" id="attendanceTable" tabindex="0">
+          <thead>
+            <tr><th>Course</th><th>Date</th><th>Status</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <form id="markAttendanceForm" aria-label="Mark attendance form">
+          <label for="attendanceCourse">Course</label>
+          <select id="attendanceCourse" required aria-required="true"></select>
+          <label for="attendanceDate">Date</label>
+          <input type="date" id="attendanceDate" required aria-required="true" />
+          <label for="attendanceStatus">Status</label>
+          <select id="attendanceStatus" required aria-required="true">
+            <option value="present">Present</option>
+            <option value="absent">Absent</option>
+          </select>
+          <button type="submit" class="btn" aria-label="Submit attendance">Submit Attendance</button>
+        </form>
+      </section>
+
+      <section id="grades" class="panel" style="display:none" aria-label="Grades Management">
+        <h2>Grades</h2>
+        <form id="gradeForm" aria-label="Add or update grade form">
+          <label for="gradeCourse">Course</label>
+          <select id="gradeCourse" required aria-required="true"></select>
+          <label for="gradeValue">Grade (0 - 100)</label>
+          <input type="number" id="gradeValue" min="0" max="100" step="0.01" required aria-required="true" />
+          <button type="submit" class="btn" aria-label="Submit grade">Submit Grade</button>
+        </form>
+        <table aria-label="Grades table" id="gradesTable" tabindex="0">
+          <thead><tr><th>Course</th><th>Grade</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section id="assignments" class="panel" style="display:none" aria-label="Assignments Tracker">
+        <h2>Assignments</h2>
+        <form id="addAssignmentForm" aria-label="Add new assignment form">
+          <label for="assignmentTitle">Title</label>
+          <input type="text" id="assignmentTitle" required aria-required="true" />
+          <label for="assignmentCourse">Course</label>
+          <select id="assignmentCourse" required aria-required="true"></select>
+          <label for="assignmentDueDate">Due Date</label>
+          <input type="date" id="assignmentDueDate" required aria-required="true" />
+          <button type="submit" class="btn" aria-label="Add assignment">Add Assignment</button>
+        </form>
+        <table aria-label="Assignments list" id="assignmentsTable" tabindex="0">
+          <thead><tr><th>Title</th><th>Course</th><th>Due Date</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section id="calendar" class="panel" style="display:none" aria-label="Academic Calendar">
+        <h2>Calendar</h2>
+        <div id="calendar" role="grid" aria-readonly="true" aria-label="Academic calendar with events"></div>
+      </section>
+
+      <section id="notifications" class="panel" style="display:none" aria-label="Notifications Center">
+        <h2>Notifications</h2>
+        <div id="notificationsList" aria-live="polite" aria-atomic="true"></div>
+      </section>
+
+      <section id="profile" class="panel" style="display:none" aria-label="Student Profile">
+        <h2>Profile</h2>
+        <div class="profile-photo" aria-hidden="true" id="profilePhoto">S</div>
+        <form id="profileForm" aria-label="Edit profile form">
+          <label for="profileName">Full Name</label>
+          <input type="text" id="profileName" required aria-required="true" />
+          <label for="profileEmail">Email</label>
+          <input type="email" id="profileEmail" required aria-required="true" />
+          <label for="profileMajor">Major</label>
+          <input type="text" id="profileMajor" />
+          <button type="submit" class="btn" aria-label="Save profile">Save Profile</button>
+        </form>
+      </section>
+
+      <section id="settings" class="panel" style="display:none" aria-label="Application Settings">
+        <h2>Settings</h2>
+        <div>
+          <label for="toggleDarkMode">Dark Mode:</label>
+          <label class="switch" aria-label="Toggle dark mode">
+            <input type="checkbox" id="toggleDarkMode" aria-checked="false" />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="notification" role="alert" class="notification" aria-live="assertive" aria-atomic="true" aria-relevant="additions"></div>
+
+  <script>
+    (() => {
+      // Elements refs
+      const panels = document.querySelectorAll('.panel');
+      const sidebarButtons = document.querySelectorAll('#sidebar button');
+      const notificationEl = document.getElementById('notification');
+
+      // Data storage keys
+      const STORAGE_KEYS = {
+        COURSES: 'studentDashboardCourses',
+        ATTENDANCE: 'studentDashboardAttendance',
+        GRADES: 'studentDashboardGrades',
+        ASSIGNMENTS: 'studentDashboardAssignments',
+        PROFILE: 'studentDashboardProfile',
+        SETTINGS: 'studentDashboardSettings',
+        NOTIFICATIONS: 'studentDashboardNotifications',
+      };
+
+      let courses = [];
+      let attendance = [];
+      let grades = [];
+      let assignments = [];
+      let profile = {};
+      let settings = { darkMode: false };
+      let notifications = [];
+
+      // Utility: Save to localStorage
+      function saveData(key, data) {
+        try {
+          localStorage.setItem(key, JSON.stringify(data));
+        } catch(e) {
+          console.warn('Error saving to localStorage', e);
+          showNotification('Error saving data');
+        }
+      }
+      // Utility: Load from localStorage
+      function loadData(key) {
+        try {
+          const item = localStorage.getItem(key);
+          return item ? JSON.parse(item) : null;
+        } catch(e) {
+          console.warn('Error reading from localStorage', e);
+          return null;
+        }
+      }
+
+      // Show notification
+      let notifTimeout = null;
+      function showNotification(message) {
+        if (notifTimeout) clearTimeout(notifTimeout);
+        notificationEl.textContent = message;
+        notificationEl.classList.add('show');
+        notifTimeout = setTimeout(() => {
+          notificationEl.classList.remove('show');
+        }, 3500);
+      }
+
+      // Navigation
+      function showPanel(panelId) {
+        panels.forEach(p => p.style.display = 'none');
+        const panel = document.getElementById(panelId);
+        if(panel) panel.style.display = 'block';
+
+        sidebarButtons.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.panel === panelId);
+          btn.setAttribute('aria-current', btn.dataset.panel === panelId ? 'page' : 'false');
+        });
+
+        // Focus main content for keyboard users
+        document.getElementById('main').focus();
+        updateAll();
+      }
+
+      sidebarButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          showPanel(btn.dataset.panel);
+        });
+      });
+
+      // Load/save data from localStorage on start/end
+      function loadAllData() {
+        courses = loadData(STORAGE_KEYS.COURSES) || [];
+        attendance = loadData(STORAGE_KEYS.ATTENDANCE) || [];
+        grades = loadData(STORAGE_KEYS.GRADES) || [];
+        assignments = loadData(STORAGE_KEYS.ASSIGNMENTS) || [];
+        profile = loadData(STORAGE_KEYS.PROFILE) || {};
+        settings = loadData(STORAGE_KEYS.SETTINGS) || { darkMode: false };
+        notifications = loadData(STORAGE_KEYS.NOTIFICATIONS) || [];
+      }
+      function saveAllData() {
+        saveData(STORAGE_KEYS.COURSES, courses);
+        saveData(STORAGE_KEYS.ATTENDANCE, attendance);
+        saveData(STORAGE_KEYS.GRADES, grades);
+        saveData(STORAGE_KEYS.ASSIGNMENTS, assignments);
+        saveData(STORAGE_KEYS.PROFILE, profile);
+        saveData(STORAGE_KEYS.SETTINGS, settings);
+        saveData(STORAGE_KEYS.NOTIFICATIONS, notifications);
+      }
+
+      // Update dashboard summary cards
+      function updateDashboardCards() {
+        document.getElementById('totalCoursesCard').textContent = courses.length + ' ';
+        document.getElementById('totalCoursesCard').appendChild(createElement('p', {}, 'Courses'));
+
+        let totalCredits = courses.reduce((acc, c) => acc + (c.credits || 0), 0);
+        document.getElementById('creditsEarnedCard').textContent = totalCredits + ' ';
+        document.getElementById('creditsEarnedCard').appendChild(createElement('p', {}, 'Credits'));
+
+        // Attendance %
+        let attended = attendance.filter(a => a.status === 'present').length;
+        let total = attendance.length;
+        let attendancePercent = total === 0 ? 0 : Math.round((attended/total)*100);
+        document.getElementById('attendancePercentCard').textContent = attendancePercent + '% ';
+        document.getElementById('attendancePercentCard').appendChild(createElement('p', {}, 'Attendance'));
+
+        // GPA calculation: simple weighted average grades scale 0-100 to 0-4
+        let totalGradePoints = 0;
+        let totalCreditsForGrades = 0;
+        grades.forEach(g => {
+          let course = courses.find(c => c.code === g.course);
+          if(course) {
+            const gradePoint = gradeToGPA(g.grade);
+            totalGradePoints += gradePoint*course.credits;
+            totalCreditsForGrades += course.credits;
+          }
+        });
+        let gpa = totalCreditsForGrades === 0 ? 0 : (totalGradePoints/totalCreditsForGrades);
+        document.getElementById('gpaCard').textContent = gpa.toFixed(2) + ' ';
+        document.getElementById('gpaCard').appendChild(createElement('p', {}, 'GPA'));
+
+        // Assignments pending count
+        let pendingCount = assignments.filter(a => !a.completed && new Date(a.dueDate) >= new Date()).length;
+        document.getElementById('assignmentsPendingCard').textContent = pendingCount + ' ';
+        document.getElementById('assignmentsPendingCard').appendChild(createElement('p', {}, 'Pending Assignments'));
+      }
+
+      // Helper: create element with attributes and text content
+      function createElement(tag, attrs = {}, text = '') {
+        const el = document.createElement(tag);
+        for(const key in attrs) {
+          el.setAttribute(key, attrs[key]);
+        }
+        if(text) el.textContent = text;
+        return el;
+      }
+
+      // Grade to GPA (4 scale rounding)
+      function gradeToGPA(grade) {
+        if(grade >= 90) return 4.0;
+        if(grade >= 80) return 3.0;
+        if(grade >= 70) return 2.0;
+        if(grade >= 60) return 1.0;
+        return 0.0;
+      }
+
+      // Update courses table
+      function updateCoursesTable() {
+        const tbody = document.querySelector('#coursesTable tbody');
+        tbody.innerHTML = '';
+        if(courses.length === 0) {
+          let row = createElement('tr');
+          let td = createElement('td', {colspan:'4', style:'text-align:center; font-style:italic;'});
+          td.textContent = 'No courses added yet.';
+          row.appendChild(td);
+          tbody.appendChild(row);
+          return;
+        }
+        courses.forEach(c => {
+          let row = createElement('tr');
+          row.appendChild(createElement('td', {}, c.code));
+          row.appendChild(createElement('td', {}, c.name));
+          row.appendChild(createElement('td', {}, c.credits.toString()));
+          let removeTd = createElement('td');
+          let btn = createElement('button', {class:'btn-secondary', 'aria-label': `Remove course ${c.code}`}, 'Remove');
+          btn.addEventListener('click', () => {
+            if(confirm(`Remove course ${c.code}? This will also remove related attendance, grades, and assignments.`)) {
+              removeCourse(c.code);
+            }
+          });
+          removeTd.appendChild(btn);
+          row.appendChild(removeTd);
+          tbody.appendChild(row);
+        });
+      }
+
+      // Add course handler
+      document.getElementById('addCourseForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const code = e.target.courseCode.value.trim().toUpperCase();
+        const name = e.target.courseName.value.trim();
+        const credits = parseInt(e.target.courseCredits.value);
+        if(!code || !name || isNaN(credits) || credits < 1) {
+          showNotification('Please enter valid course details.');
+          return;
+        }
+        if(courses.find(c => c.code === code)) {
+          showNotification('Course code already exists.');
+          return;
+        }
+        courses.push({ code, name, credits });
+        saveData(STORAGE_KEYS.COURSES, courses);
+        e.target.reset();
+        updateCoursesTable();
+        updateCourseSelects();
+        updateDashboardCards();
+        showNotification(`Course ${code} added.`);
+      });
+
+      // Remove course and related data
+      function removeCourse(code) {
+        courses = courses.filter(c => c.code !== code);
+        attendance = attendance.filter(a => a.course !== code);
+        grades = grades.filter(g => g.course !== code);
+        assignments = assignments.filter(a => a.course !== code);
+        saveAllData();
+        updateCoursesTable();
+        updateCourseSelects();
+        updateAttendanceTable();
+        updateGradesTable();
+        updateAssignmentsTable();
+        updateDashboardCards();
+        showNotification(`Course ${code} removed.`);
+      }
+
+      // Update course selects for attendance, grades, assignments
+      function updateCourseSelects() {
+        const selects = [document.getElementById('attendanceCourse'), document.getElementById('gradeCourse'), document.getElementById('assignmentCourse')];
+        selects.forEach(select => {
+          select.innerHTML = '';
+          if(courses.length === 0){
+            let opt = createElement('option', {disabled:true, selected:true}, 'No courses');
+            select.appendChild(opt);
+            select.disabled = true;
+          } else {
+            select.disabled = false;
+            let opt = createElement('option', {disabled:true, selected:true, value:''}, 'Select Course');
+            select.appendChild(opt);
+            courses.forEach(c => {
+              let option = createElement('option', {value: c.code}, `${c.code} - ${c.name}`);
+              select.appendChild(option);
+            });
+          }
+        });
+      }
+
+      // Update attendance table
+      function updateAttendanceTable() {
+        const tbody = document.querySelector('#attendanceTable tbody');
+        tbody.innerHTML = '';
+        if(attendance.length === 0) {
+          let row = createElement('tr');
+          let td = createElement('td', {colspan:'3', style:'text-align:center; font-style:italic;'});
+          td.textContent = 'No attendance records.';
+          row.appendChild(td);
+          tbody.appendChild(row);
+          return;
+        }
+        attendance.sort((a,b) => new Date(b.date) - new Date(a.date));
+        attendance.forEach(rec => {
+          let row = createElement('tr');
+          let courseName = (courses.find(c => c.code === rec.course) || {}).name || rec.course;
+          row.appendChild(createElement('td', {}, `${rec.course} - ${courseName}`));
+          row.appendChild(createElement('td', {}, rec.date));
+          let statusTd = createElement('td', {}, '');
+          const span = createElement('span', {style: `color: ${rec.status === 'present' ? 'green' : 'red'}; font-weight: 600;`}, rec.status.charAt(0).toUpperCase() + rec.status.slice(1));
+          statusTd.appendChild(span);
+          row.appendChild(statusTd);
+          tbody.appendChild(row);
+        });
+      }
+
+      // Add attendance handler
+      document.getElementById('markAttendanceForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const course = e.target.attendanceCourse.value;
+        const date = e.target.attendanceDate.value;
+        const status = e.target.attendanceStatus.value;
+        if(!course || !date || !status) {
+          showNotification('Please complete all attendance form fields.');
+          return;
+        }
+        // Check if already exists for course/date
+        let existIdx = attendance.findIndex(a => a.course === course && a.date === date);
+        if(existIdx >= 0){
+          attendance[existIdx].status = status;
+          showNotification(`Attendance updated for ${course} on ${date}`);
+        } else {
+          attendance.push({ course, date, status });
+          showNotification(`Attendance marked for ${course} on ${date}`);
+        }
+        saveData(STORAGE_KEYS.ATTENDANCE, attendance);
+        e.target.reset();
+        updateAttendanceTable();
+        updateDashboardCards();
+        updateAttendanceChart();
+      });
+
+      // Update grades table
+      function updateGradesTable() {
+        const tbody = document.querySelector('#gradesTable tbody');
+        tbody.innerHTML = '';
+        if(grades.length === 0) {
+          let row = createElement('tr');
+          let td = createElement('td', {colspan:'2', style:'text-align:center; font-style:italic;'});
+          td.textContent = 'No grades entered.';
+          row.appendChild(td);
+          tbody.appendChild(row);
+          return;
+        }
+        grades.forEach(g => {
+          let row = createElement('tr');
+          let courseName = (courses.find(c => c.code === g.course) || {}).name || g.course;
+          row.appendChild(createElement('td', {}, `${g.course} - ${courseName}`));
+          row.appendChild(createElement('td', {}, g.grade.toFixed(2)));
+          tbody.appendChild(row);
+        });
+      }
+
+      // Add or update grade handler
+      document.getElementById('gradeForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const course = e.target.gradeCourse.value;
+        let grade = parseFloat(e.target.gradeValue.value);
+        if(!course || isNaN(grade) || grade < 0 || grade > 100) {
+          showNotification('Please enter a valid course and grade (0-100).');
+          return;
+        }
+        let idx = grades.findIndex(g => g.course === course);
+        if(idx >= 0) {
+          grades[idx].grade = grade;
+          showNotification(`Grade updated for ${course}`);
+        } else {
+          grades.push({ course, grade });
+          showNotification(`Grade added for ${course}`);
+        }
+        saveData(STORAGE_KEYS.GRADES, grades);
+        e.target.reset();
+        updateGradesTable();
+        updateDashboardCards();
+        updateGradeChart();
+      });
+
+      // Update assignments table
+      function updateAssignmentsTable() {
+        const tbody = document.querySelector('#assignmentsTable tbody');
+        tbody.innerHTML = '';
+        if(assignments.length === 0) {
+          let row = createElement('tr');
+          let td = createElement('td', {colspan:'5', style:'text-align:center; font-style:italic;'});
+          td.textContent = 'No assignments added.';
+          row.appendChild(td);
+          tbody.appendChild(row);
+          return;
+        }
+        assignments.sort((a,b) => new Date(a.dueDate) - new Date(b.dueDate));
+        assignments.forEach(a => {
+          let row = createElement('tr');
+          row.appendChild(createElement('td', {}, a.title));
+          let courseName = (courses.find(c => c.code === a.course) || {}).name || a.course;
+          row.appendChild(createElement('td', {}, `${a.course} - ${courseName}`));
+          row.appendChild(createElement('td', {}, a.dueDate));
+          row.appendChild(createElement('td', {}, a.completed ? 'Completed' : 'Pending'));
+          let actionsTd = createElement('td');
+          let toggleBtn = createElement('button', {class:'btn btn-secondary', 'aria-label': `${a.completed ? 'Mark pending' : 'Mark completed'} assignment ${a.title}`}, a.completed ? 'Mark Pending' : 'Mark Completed');
+          toggleBtn.addEventListener('click', () => {
+            a.completed = !a.completed;
+            saveData(STORAGE_KEYS.ASSIGNMENTS, assignments);
+            updateAssignmentsTable();
+            updateDashboardCards();
+            showNotification(`Assignment "${a.title}" marked ${a.completed ? 'completed' : 'pending'}.`);
+          });
+          let removeBtn = createElement('button', {class:'btn-secondary', 'aria-label': `Remove assignment ${a.title}`}, 'Remove');
+          removeBtn.style.marginLeft = '8px';
+          removeBtn.addEventListener('click', () => {
+            if(confirm(`Remove assignment "${a.title}"?`)) {
+              assignments = assignments.filter(asn => asn !== a);
+              saveData(STORAGE_KEYS.ASSIGNMENTS, assignments);
+              updateAssignmentsTable();
+              updateDashboardCards();
+              showNotification(`Assignment "${a.title}" removed.`);
+            }
+          });
+          actionsTd.appendChild(toggleBtn);
+          actionsTd.appendChild(removeBtn);
+          row.appendChild(actionsTd);
+          tbody.appendChild(row);
+        });
+      }
+
+      // Add assignment handler
+      document.getElementById('addAssignmentForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const title = e.target.assignmentTitle.value.trim();
+        const course = e.target.assignmentCourse.value;
+        const dueDate = e.target.assignmentDueDate.value;
+        if(!title || !course || !dueDate) {
+          showNotification('Please complete all assignment fields.');
+          return;
+        }
+        assignments.push({ title, course, dueDate, completed: false });
+        saveData(STORAGE_KEYS.ASSIGNMENTS, assignments);
+        e.target.reset();
+        updateAssignmentsTable();
+        updateDashboardCards();
+        showNotification(`Assignment added: ${title}`);
+      });
+
+      // Update profile form with saved data
+      function updateProfileForm() {
+        document.getElementById('profileName').value = profile.name || '';
+        document.getElementById('profileEmail').value = profile.email || '';
+        document.getElementById('profileMajor').value = profile.major || '';
+        updateProfilePhoto();
+      }
+      function updateProfilePhoto() {
+        const photoEl = document.getElementById('profilePhoto');
+        if(profile.name && profile.name.length > 0){
+          const initials = profile.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+          photoEl.textContent = initials;
+        } else {
+          photoEl.textContent = 'S';
+        }
+      }
+      document.getElementById('profileForm').addEventListener('submit', e => {
+        e.preventDefault();
+        profile.name = e.target.profileName.value.trim();
+        profile.email = e.target.profileEmail.value.trim();
+        profile.major = e.target.profileMajor.value.trim();
+        if(!profile.name || !profile.email){
+          showNotification('Please provide both name and email.');
+          return;
+        }
+        saveData(STORAGE_KEYS.PROFILE, profile);
+        updateProfilePhoto();
+        showNotification('Profile saved.');
+      });
+
+      // Settings
+      const toggleDarkMode = document.getElementById('toggleDarkMode');
+      toggleDarkMode.addEventListener('change', e => {
+        settings.darkMode = e.target.checked;
+        if(settings.darkMode) {
+          document.body.classList.add('dark');
+        } else {
+          document.body.classList.remove('dark');
+        }
+        saveData(STORAGE_KEYS.SETTINGS, settings);
+        toggleDarkMode.setAttribute('aria-checked', settings.darkMode.toString());
+      });
+      function applySettings(){
+        if(settings.darkMode){
+          document.body.classList.add('dark');
+          toggleDarkMode.checked = true;
+          toggleDarkMode.setAttribute('aria-checked', "true");
+        } else {
+          document.body.classList.remove('dark');
+          toggleDarkMode.checked = false;
+          toggleDarkMode.setAttribute('aria-checked', "false");
+        }
+      }
+
+      // Calendar - simplified month view with events from assignments and attendance warnings
+      const calendarEl = document.getElementById('calendar');
+      function buildCalendar(){
+        calendarEl.innerHTML = '';
+        let now = new Date();
+        let currentYear = now.getFullYear();
+        let currentMonth = now.getMonth();
+
+        let monthStart = new Date(currentYear, currentMonth, 1);
+        let monthEnd = new Date(currentYear, currentMonth + 1, 0);
+        let startDay = monthStart.getDay(); // Sun=0
+
+        // Header
+        const header = createElement('div', {class:'calendar-header'});
+        const prevBtn = createElement('button', {ariaLabel:'Previous month'}, '‹');
+        const nextBtn = createElement('button', {ariaLabel:'Next month'}, '›');
+        const monthYear = createElement('div', {ariaLabel:'Current month'}, monthStart.toLocaleString('default', {month:'long', year:'numeric'}));
+        header.appendChild(prevBtn);
+        header.appendChild(monthYear);
+        header.appendChild(nextBtn);
+        calendarEl.appendChild(header);
+
+        // Days of week
+        const daysRow = createElement('div', {id:'calendar-days'});
+        ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => {
+          let dayEl = createElement('div', {}, d);
+          daysRow.appendChild(dayEl);
+        });
+        calendarEl.appendChild(daysRow);
+
+        // Calendar grid
+        const grid = createElement('div', {id:'calendar-grid'});
+
+        // Days before month
+        for(let i=0; i<startDay; i++){
+          let d = createElement('div', {class:'calendar-day other-month'}, '');
+          grid.appendChild(d);
+        }
+
+        // Days in month
+        let todayStr = now.toISOString().slice(0,10);
+        for(let day=1; day <= monthEnd.getDate(); day++){
+          let dateStr = new Date(currentYear, currentMonth, day).toISOString().slice(0,10);
+          let dayEl = createElement('div', {class:'calendar-day'}, day.toString());
+          if(dateStr === todayStr){
+            dayEl.classList.add('today');
+          }
+          // Check for event: assignment due or attendance low warning next 3 days
+          const assignmentDue = assignments.some(a => a.dueDate === dateStr && !a.completed);
+          if(assignmentDue) {
+            dayEl.classList.add('event');
+            dayEl.title = 'Assignment Due';
+          }
+          grid.appendChild(dayEl);
+        }
+
+        calendarEl.appendChild(grid);
+
+        // Prev/next month functionality - limited to current month for simplicity, disabled
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+      }
+
+      // Notifications update region
+      function updateNotificationsList() {
+        const container = document.getElementById('notificationsList');
+        container.innerHTML = '';
+        if(notifications.length === 0) {
+          container.textContent = 'No notifications.';
+          return;
+        }
+        notifications.forEach(n => {
+          const div = createElement('div', {}, n.message);
+          div.style.background = '#6676ff';
+          div.style.color = '#fff';
+          div.style.padding = '10px 15px';
+          div.style.marginBottom = '10px';
+          div.style.borderRadius = '10px';
+          container.appendChild(div);
+        });
+      }
+
+      // Create and update charts
+      let attendanceChart = null;
+      let gradeChart = null;
+      function updateAttendanceChart() {
+        if(!attendanceChart){
+          const ctx = document.getElementById('attendanceChart').getContext('2d');
+          attendanceChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: [] },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: true },
+                tooltip: { enabled: true },
+              },
+              scales: {
+                y: { min: 0, max: 100, title: {display: true, text: 'Attendance %'}},
+                x: {title: {display: true, text: 'Courses'}}
+              }
+            }
+          });
+        }
+        // Calculate attendance % per course
+        const labels = courses.map(c => c.code);
+        const data = labels.map(code => {
+          let attRecords = attendance.filter(a => a.course === code);
+          if(attRecords.length === 0) return 0;
+          let presentCount = attRecords.filter(a => a.status === 'present').length;
+          return Math.round((presentCount / attRecords.length)*100);
+        });
+        attendanceChart.data.labels = labels;
+        attendanceChart.data.datasets = [{
+          label: 'Attendance %',
+          data,
+          borderColor: '#6676ff',
+          backgroundColor: 'rgba(102, 118, 255, 0.3)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+        }];
+        attendanceChart.update();
+      }
+      function updateGradeChart() {
+        if(!gradeChart){
+          const ctx = document.getElementById('gradeChart').getContext('2d');
+          gradeChart = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: [], datasets: [] },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              indexAxis: 'y',
+              plugins: {
+                legend: { display: false },
+                tooltip: { enabled: true }
+              },
+              scales: {
+                x: {min: 0, max: 100, title:{display:true,text:'Grade %'}},
+                y: {title:{display:true,text:'Course'}}
+              }
+            }
+          });
+        }
+        const labels = grades.map(g => g.course);
+        const data = grades.map(g => g.grade);
+        gradeChart.data.labels = labels;
+        gradeChart.data.datasets = [{
+          label: 'Grade %',
+          data,
+          backgroundColor: '#6676ff',
+          borderRadius: 6,
+          barPercentage: 0.7,
+        }];
+        gradeChart.update();
+      }
+
+      // Update everything (tables, charts, cards)
+      function updateAll() {
+        updateDashboardCards();
+        updateCoursesTable();
+        updateAttendanceTable();
+        updateGradesTable();
+        updateAssignmentsTable();
+        updateCourseSelects();
+        updateNotificationsList();
+        updateProfileForm();
+        applySettings();
+        buildCalendar();
+        updateAttendanceChart();
+        updateGradeChart();
+      }
+
+      // Initialize
+      function init() {
+        loadAllData();
+        showPanel('dashboard');
+        updateAll();
+      }
+
+      init();
+
+      window.addEventListener('beforeunload', saveAllData);
+    })();
+  </script>
+</body>
+</html>
+
